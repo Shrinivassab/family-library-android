@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import '../models/child_profile.dart';
 import '../services/ai_service.dart';
 import '../services/camera_service.dart';
+import '../theme/app_colors.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/loading_widget.dart';
+import '../widgets/tab_header_band.dart';
 
 class _MCQQuestion {
   final String question;
@@ -175,7 +178,16 @@ Questions and options must be written in $language.
       case _TestStage.setup:
         return _buildSetup();
       case _TestStage.loading:
-        return const LoadingWidget(message: 'Generating your 15 questions...');
+        return Column(
+          children: [
+            const TabHeaderBand(
+              title: 'Self Analysis Test',
+              description: '15 questions to check understanding and find weak spots.',
+              icon: Icons.quiz,
+            ),
+            const Expanded(child: LoadingWidget(message: 'Creating your 15 questions...')),
+          ],
+        );
       case _TestStage.inProgress:
         return _buildTestInProgress();
       case _TestStage.submitted:
@@ -184,37 +196,50 @@ Questions and options must be written in $language.
   }
 
   Widget _buildSetup() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Self Analysis Test',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return Column(
+      children: [
+        const TabHeaderBand(
+          title: 'Self Analysis Test',
+          description: '15 questions to check understanding and find weak spots.',
+          icon: Icons.quiz,
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _uploadWeeklyContent,
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Upload Weekly Content'),
+                ),
+                if (_weeklyContentBase64 != null) ...[
+                  const SizedBox(height: 8),
+                  const Text('Weekly content uploaded.', style: TextStyle(color: Colors.green)),
+                ],
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _generateQuestions,
+                  icon: const Icon(Icons.quiz),
+                  label: const Text('Generate 15 MCQ Questions'),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(_error!, style: const TextStyle(color: Colors.red)),
+                ],
+                const SizedBox(height: 16),
+                const Expanded(
+                  child: EmptyState(
+                    icon: Icons.quiz,
+                    message: 'Upload this week\'s content and tap Generate to start the self-analysis test.',
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _uploadWeeklyContent,
-            icon: const Icon(Icons.upload_file),
-            label: const Text('Upload Weekly Content'),
-          ),
-          if (_weeklyContentBase64 != null) ...[
-            const SizedBox(height: 8),
-            const Text('Weekly content uploaded.', style: TextStyle(color: Colors.green)),
-          ],
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _generateQuestions,
-            icon: const Icon(Icons.quiz),
-            label: const Text('Generate 15 MCQ Questions'),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -235,39 +260,56 @@ Questions and options must be written in $language.
                 'Question ${_currentIndex + 1} of ${_questions.length}',
                 style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              Text(
-                _formatTime(_secondsRemaining),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isTimeLow ? Colors.red : Colors.black87,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: (isTimeLow ? Colors.red : AppColors.primaryBlue).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _formatTime(_secondsRemaining),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isTimeLow ? Colors.red : AppColors.primaryBlue,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            question.question,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                question.question,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: ListView.builder(
-              itemCount: question.options.length,
-              itemBuilder: (context, index) {
-                return RadioListTile<int>(
-                  title: Text(
-                    '${String.fromCharCode(65 + index)}. ${question.options[index]}',
-                  ),
-                  value: index,
-                  groupValue: _selectedAnswers[_currentIndex],
-                  onChanged: (value) {
-                    if (value != null) _selectAnswer(value);
-                  },
-                );
-              },
+            child: Card(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                itemCount: question.options.length,
+                itemBuilder: (context, index) {
+                  return RadioListTile<int>(
+                    title: Text(
+                      '${String.fromCharCode(65 + index)}. ${question.options[index]}',
+                    ),
+                    value: index,
+                    groupValue: _selectedAnswers[_currentIndex],
+                    activeColor: AppColors.accentTeal,
+                    onChanged: (value) {
+                      if (value != null) _selectAnswer(value);
+                    },
+                  );
+                },
+              ),
             ),
           ),
+          const SizedBox(height: 12),
           ElevatedButton(
             onPressed: _nextQuestion,
             child: Text(isLastQuestion ? 'Submit Test' : 'Next Question'),
@@ -297,20 +339,36 @@ Questions and options must be written in $language.
       padding: const EdgeInsets.all(16),
       child: ListView(
         children: [
-          Text(
-            'Score: $score / ${_questions.length}',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Score: $score / ${_questions.length}',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryBlue,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           const Text("Bloom's Level Breakdown", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          ...bloomsResults.entries.map((e) {
-            final correct = e.value.where((c) => c).length;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('${e.key}: $correct / ${e.value.length}'),
-            );
-          }),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                children: bloomsResults.entries.map((e) {
+                  final correct = e.value.where((c) => c).length;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text('${e.key}: $correct / ${e.value.length}'),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           if (weakAreas.isNotEmpty) ...[
             const Text('Weak Areas to Revise', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -325,19 +383,25 @@ Questions and options must be written in $language.
             final selected = _selectedAnswers[i];
             final isCorrect = selected == q.correctIndex;
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${i + 1}. ${q.question}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text(
-                    'Your answer: ${selected != null ? q.options[selected] : "Not answered"}',
-                    style: TextStyle(color: isCorrect ? Colors.green : Colors.red),
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${i + 1}. ${q.question}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Your answer: ${selected != null ? q.options[selected] : "Not answered"}',
+                        style: TextStyle(color: isCorrect ? Colors.green : Colors.red),
+                      ),
+                      if (!isCorrect)
+                        Text('Correct answer: ${q.options[q.correctIndex]}',
+                            style: const TextStyle(color: Colors.green)),
+                    ],
                   ),
-                  if (!isCorrect)
-                    Text('Correct answer: ${q.options[q.correctIndex]}',
-                        style: const TextStyle(color: Colors.green)),
-                ],
+                ),
               ),
             );
           }),

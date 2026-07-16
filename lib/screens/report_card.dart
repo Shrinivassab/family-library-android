@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/child_profile.dart';
 import '../services/ai_service.dart';
 import '../services/pdf_service.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/loading_widget.dart';
+import '../widgets/tab_header_band.dart';
 
 class ReportCardScreen extends StatefulWidget {
   final ChildProfile profile;
@@ -81,45 +83,68 @@ Respond in $language, in a warm and supportive tone.
     }
   }
 
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const LoadingWidget(message: 'Writing the report card...');
+    }
+    if (_report != null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: SelectableText(_report!, style: const TextStyle(fontSize: 14, height: 1.5)),
+          ),
+        ),
+      );
+    }
+    return const EmptyState(
+      icon: Icons.assessment,
+      message: 'Tap Generate to create an encouraging report card for your child.',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Report Card',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _generateReport,
-                icon: const Icon(Icons.assessment),
-                label: const Text('Generate Report Card'),
-              ),
-              const SizedBox(width: 12),
-              if (_report != null)
-                OutlinedButton.icon(
-                  onPressed: _isExporting ? null : _exportPdf,
-                  icon: const Icon(Icons.picture_as_pdf),
-                  label: Text(_isExporting ? 'Exporting...' : 'Export PDF'),
+    return Column(
+      children: [
+        const TabHeaderBand(
+          title: 'Report Card',
+          description: 'A warm progress summary you can share or print.',
+          icon: Icons.assessment,
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _generateReport,
+                      icon: const Icon(Icons.assessment),
+                      label: const Text('Generate Report Card'),
+                    ),
+                    const SizedBox(width: 12),
+                    if (_report != null)
+                      OutlinedButton.icon(
+                        onPressed: _isExporting ? null : _exportPdf,
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: Text(_isExporting ? 'Exporting...' : 'Export PDF'),
+                      ),
+                  ],
                 ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_isLoading) const Expanded(child: LoadingWidget(message: 'Generating report...')),
-          if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
-          if (!_isLoading && _report != null)
-            Expanded(
-              child: SingleChildScrollView(
-                child: SelectableText(_report!, style: const TextStyle(fontSize: 14, height: 1.5)),
-              ),
+                const SizedBox(height: 16),
+                if (_error != null) ...[
+                  Text(_error!, style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 12),
+                ],
+                Expanded(child: _buildContent()),
+              ],
             ),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 }

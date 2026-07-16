@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'theme/app_colors.dart';
 
 void main() {
   runApp(const FamilyLibraryApp());
@@ -15,20 +16,38 @@ class FamilyLibraryApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        primaryColor: const Color(0xFF1f77b4),
+        primaryColor: AppColors.primaryBlue,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primaryBlue,
+          primary: AppColors.primaryBlue,
+          secondary: AppColors.accentTeal,
+        ),
         scaffoldBackgroundColor: Colors.white,
         textTheme: ThemeData.light().textTheme,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1f77b4),
+          backgroundColor: AppColors.primaryBlue,
           foregroundColor: Colors.white,
           elevation: 2,
         ),
+        cardTheme: CardThemeData(
+          elevation: 2,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1f77b4),
+            backgroundColor: AppColors.primaryBlue,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.accentTeal,
+            side: const BorderSide(color: AppColors.accentTeal),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ),

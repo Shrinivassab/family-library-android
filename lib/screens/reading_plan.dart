@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/child_profile.dart';
 import '../services/ai_service.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/loading_widget.dart';
+import '../widgets/tab_header_band.dart';
 
 class ReadingPlanScreen extends StatefulWidget {
   final ChildProfile profile;
@@ -58,34 +60,57 @@ Respond in $language.
     }
   }
 
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const LoadingWidget(message: 'Creating your reading plan...');
+    }
+    if (_plan != null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: SelectableText(_plan!, style: const TextStyle(fontSize: 14, height: 1.5)),
+          ),
+        ),
+      );
+    }
+    return const EmptyState(
+      icon: Icons.auto_stories,
+      message: "Add your child's details and tap Generate to create a 7-day reading plan.",
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Generate 7-Day Reading Plan',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _isLoading ? null : _generatePlan,
-            icon: const Icon(Icons.auto_stories),
-            label: const Text('Generate 7-Day Reading Plan'),
-          ),
-          const SizedBox(height: 16),
-          if (_isLoading) const Expanded(child: LoadingWidget(message: 'Generating your plan...')),
-          if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
-          if (!_isLoading && _plan != null)
-            Expanded(
-              child: SingleChildScrollView(
-                child: SelectableText(_plan!, style: const TextStyle(fontSize: 14, height: 1.5)),
-              ),
+    return Column(
+      children: [
+        const TabHeaderBand(
+          title: 'Reading Plan',
+          description: 'A personalized 7-day plan with quizzes and vocabulary.',
+          icon: Icons.auto_stories,
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _generatePlan,
+                  icon: const Icon(Icons.auto_stories),
+                  label: const Text('Generate 7-Day Reading Plan'),
+                ),
+                const SizedBox(height: 16),
+                if (_error != null) ...[
+                  Text(_error!, style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 12),
+                ],
+                Expanded(child: _buildContent()),
+              ],
             ),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
